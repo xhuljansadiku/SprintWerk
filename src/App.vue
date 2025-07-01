@@ -2,10 +2,10 @@
   <div id="app" :class="{ 'dark-mode': isDarkMode }">
     <h1>My To-Do List</h1>
     <div class="todo-container">
-      <!-- Dark Mode Toggle -->
+      <!-- Dark Mode Toggle
       <button @click="toggleDarkMode" class="dark-mode-toggle">
         {{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}
-      </button>
+      </button> -->
 
       <!-- Add Task Section -->
       <div class="add-task">
@@ -31,7 +31,7 @@
         </select>
         <button @click="addTask">Add</button>
       </div>
-
+ <hr>
       <!-- Search Bar -->
       <input
         v-model="searchQuery"
@@ -47,7 +47,7 @@
           {{ showArchived ? 'Hide Archived' : 'Show Archived' }}
         </button>
       </div>
-
+<hr>
       <!-- Filter buttons -->
       <div class="filters">
         <button @click="setFilter('all')" :class="{ active: filter === 'all' }">All</button>
@@ -83,7 +83,7 @@
           </div>
         </li>
       </ul>
-
+<hr>
       <!-- Archived Tasks -->
       <div v-if="showArchived">
         <h2>Archived Tasks</h2>
@@ -109,10 +109,9 @@
       <!-- Export/Import Buttons -->
       <div class="import-export">
         <button @click="exportTasks">Export Tasks</button>
-        <input type="file" @change="importTasks" accept=".json" />
       </div>
     </div>
-
+ 
     <!-- Edit Task Modal -->
     <div v-if="editingTask" class="modal">
       <div class="modal-content">
@@ -335,167 +334,80 @@ export default {
 </script>
 
  <style>
-/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: #f4f4f9;
-  color: #333;
+  font-family: 'Inter', sans-serif;
+  background-color: #040430;
+  color: #374151;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.dark-mode body {
-  background-color: #1e1e2f;
-  color: #f4f4f9;
 }
 
 /* App Container */
 #app {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
-}
-
-.dark-mode #app {
-  background-color: #2a2a40;
+  max-width: 700px;
+  margin: 50px auto;
+  padding: 40px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
 }
 
 /* Header */
 h1 {
   text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+  font-weight: 600;
+  color: black;
+  margin-bottom: 35px;
 }
 
-.dark-mode h1 {
-  color: #fff;
-}
-
-/* Dark Mode Toggle */
-.dark-mode-toggle {
-  background-color: #4a4a4a;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.dark-mode .dark-mode-toggle {
-  background-color: #e0e0e0;
-  color: #333;
-}
-
-/* Add Task Section */
+/* Add Task */
 .add-task {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
   gap: 10px;
   margin-bottom: 20px;
 }
 
 .add-task input,
 .add-task select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  transition: border-color 0.3s;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #F9FAFB;
 }
 
 .add-task input:focus,
 .add-task select:focus {
-  border-color: #007bff;
+  outline: none;
+  border-color: #3B82F6;
+  background: white;
 }
 
 .add-task button {
-  background-color: #007bff;
+  background-color: #3B82F6;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .add-task button:hover {
-  background-color: #0056b3;
+  background-color: #2563EB;
 }
 
 /* Search Bar */
 .search-bar {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #F9FAFB;
   margin-bottom: 20px;
-  transition: border-color 0.3s;
-}
-
-.search-bar:focus {
-  border-color: #007bff;
-}
-
-/* Task List */
-ul {
-  padding: 0;
-  list-style: none;
-}
-
-li {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.3s;
-}
-
-li.completed {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-li.archived {
-  display: none;
-}
-
-li.low {
-  border-left: 5px solid #28a745;
-}
-
-li.medium {
-  border-left: 5px solid #ffc107;
-}
-
-li.high {
-  border-left: 5px solid #dc3545;
-}
-
-.dark-mode li {
-  background-color: #3a3a55;
-  border-color: #444;
-}
-
-/* Task Buttons */
-li button {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-li button:hover {
-  color: #0056b3;
 }
 
 /* Task Controls */
@@ -506,17 +418,17 @@ li button:hover {
 }
 
 .task-controls button {
-  background-color: #6c757d;
-  color: white;
+  background: #E5E7EB;
   border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .task-controls button:hover {
-  background-color: #5a6268;
+  background: #D1D5DB;
 }
 
 /* Filters */
@@ -527,70 +439,103 @@ li button:hover {
 }
 
 .filters button {
-  background-color: #e9ecef;
+  background: #E5E7EB;
   border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .filters button.active {
-  background-color: #007bff;
+  background: #3B82F6;
   color: white;
 }
 
 .filters button:hover {
-  background-color: #ced4da;
+  background: #D1D5DB;
 }
 
-.dark-mode .filters button.active {
-  background-color: #0056b3;
+/* Task List */
+ul {
+  list-style: none;
+  padding: 0;
 }
 
-/* Archived Tasks */
-.archived-tasks {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
+li {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.dark-mode .archived-tasks {
-  background-color: #2a2a40;
+li:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+li.completed {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+li.low { border-left: 5px solid #10B981; }
+li.medium { border-left: 5px solid #F59E0B; }
+li.high { border-left: 5px solid #EF4444; }
+
+li button {
+  background: none;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+li button:hover {
+  color: #2563EB;
 }
 
 /* Import/Export */
 .import-export {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .import-export button {
-  background-color: #007bff;
+  background-color: #3B82F6;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .import-export button:hover {
-  background-color: #0056b3;
+  background-color: #2563EB;
 }
 
 .import-export input[type='file'] {
   margin-left: 10px;
 }
 
-/* Edit Task Modal */
+/* Modal */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -598,63 +543,47 @@ li button:hover {
 
 .modal-content {
   background: white;
-  padding: 20px;
-  border-radius: 5px;
+  padding: 30px;
+  border-radius: 12px;
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
 }
 
 .modal-content input,
 .modal-content select,
 .modal-content textarea {
   width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
 }
 
 .modal-content button {
-  background-color: #28a745;
+  background-color: #10B981;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .modal-content button:hover {
-  background-color: #218838;
+  background-color: #059669;
 }
 
-/* Animations */
-li {
-  animation: fadeIn 0.5s;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 600px) {
+/* Responsive */
+@media (max-width: 768px) {
   .add-task {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
-
   .task-controls {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 }
 
