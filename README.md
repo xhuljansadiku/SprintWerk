@@ -1,24 +1,23 @@
-# todo-app
+# SprintWerk (Vue 3 + Pinia + DnD + Offline)
 
-## Project setup
-```
-npm install
-```
+Kanban board with drag & drop, offline storage (IndexedDB), and a clean Pinia store.
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+**Live:** _add Netlify/Vercel URL_ • **Repo:** _add GitHub URL_
 
-### Compiles and minifies for production
-```
-npm run build
-```
+---
 
-### Lints and fixes files
-```
-npm run lint
-```
+## Features
+- To Do / Doing / Done columns (drag & drop with vuedraggable)
+- Offline-first (IndexedDB via localforage) + debounced autosave
+- Search & filters (priority, category)
+- Edit modal (title, description, due date, priority, category, status)
+- Export JSON (tasks + column order)
+- Auto-migration from legacy `localStorage` → new store
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+---
+
+## Quick Start
+```bash
+npm i
+npm run serve   # http://localhost:8080
+npm run build   # outputs to /dist

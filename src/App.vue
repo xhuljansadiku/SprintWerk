@@ -1,590 +1,230 @@
 <template>
-  <div id="app" :class="{ 'dark-mode': isDarkMode }">
-    <h1>My To-Do List</h1>
-    <div class="todo-container">
-      <!-- Dark Mode Toggle
-      <button @click="toggleDarkMode" class="dark-mode-toggle">
-        {{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}
-      </button> -->
+  <div id="app">
+    <header class="hdr">
+      <div>
+        <h1>SprintWerk</h1>
+        <p class="sub">Kanban · Offline · Drag & Drop</p>
+      </div>
+      <div class="stats">
+        <span>Todo: {{ store.counts.todo }}</span>
+        <span>Doing: {{ store.counts.doing }}</span>
+        <span>Done: {{ store.counts.done }}</span>
+      </div>
+    </header>
 
-      <!-- Add Task Section -->
-      <div class="add-task">
-        <input
-          v-model="newTask"
-          @keyup.enter="addTask"
-          placeholder="Add a new task"
-        />
-        <input
-          type="date"
-          v-model="newTaskDueDate"
-          placeholder="Due Date"
-        />
-        <select v-model="newTaskCategory">
-          <option value="work">Work</option>
-          <option value="personal">Personal</option>
-          <option value="shopping">Shopping</option>
-        </select>
-        <select v-model="newTaskPriority">
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-        <button @click="addTask">Add</button>
-      </div>
- <hr>
-      <!-- Search Bar -->
-      <input
-        v-model="searchQuery"
-        placeholder="Search tasks..."
-        class="search-bar"
-      />
+    <AddTaskForm />
 
-      <!-- Task Count and Controls -->
-      <div class="task-controls">
-        <span>{{ remainingTasks }} tasks left</span>
-        <button @click="clearCompleted">Clear Completed</button>
-        <button @click="showArchived = !showArchived">
-          {{ showArchived ? 'Hide Archived' : 'Show Archived' }}
-        </button>
-      </div>
-<hr>
-      <!-- Filter buttons -->
-      <div class="filters">
-        <button @click="setFilter('all')" :class="{ active: filter === 'all' }">All</button>
-        <button @click="setFilter('completed')" :class="{ active: filter === 'completed' }">Completed</button>
-        <button @click="setFilter('incomplete')" :class="{ active: filter === 'incomplete' }">Incomplete</button>
-      </div>
-
-      <!-- List of tasks -->
-      <ul>
-        <li
-          v-for="(task, index) in filteredTasks"
-          :key="task.id"
-          draggable="true"
-          @dragstart="dragStart(index)"
-          @dragover.prevent
-          @drop="drop(index)"
-          :class="[task.priority, { completed: task.completed, archived: task.archived }]"
-        >
-          <span>
-            {{ task.text }}
-            <small v-if="task.dueDate">(Due: {{ formatDate(task.dueDate) }})</small>
-            <small v-if="task.category"> | {{ task.category }}</small>
-          </span>
-          <div>
-            <button @click="toggleComplete(task.id)">
-              {{ task.completed ? 'Undo' : 'Complete' }}
-            </button>
-            <button @click="editTask(task.id)">Edit</button>
-            <button @click="archiveTask(task.id)">
-              {{ task.archived ? 'Unarchive' : 'Archive' }}
-            </button>
-            <button @click="removeTask(task.id)">Delete</button>
-          </div>
-        </li>
-      </ul>
-<hr>
-      <!-- Archived Tasks -->
-      <div v-if="showArchived">
-        <h2>Archived Tasks</h2>
-        <ul>
-          <li
-            v-for="task in archivedTasks"
-            :key="task.id"
-            :class="[task.priority, { completed: task.completed }]"
-          >
-            <span>
-              {{ task.text }}
-              <small v-if="task.dueDate">(Due: {{ formatDate(task.dueDate) }})</small>
-              <small v-if="task.category"> | {{ task.category }}</small>
-            </span>
-            <div>
-              <button @click="unarchiveTask(task.id)">Unarchive</button>
-              <button @click="removeTask(task.id)">Delete</button>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Export/Import Buttons -->
-      <div class="import-export">
-        <button @click="exportTasks">Export Tasks</button>
-      </div>
+    <!-- Controls -->
+    <div class="toolbar">
+      <input v-model="search" class="control" placeholder="Search tasks…" />
+      <select v-model="byPriority" class="control">
+        <option value="">All priorities</option>
+        <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+      </select>
+      <select v-model="byCategory" class="control">
+        <option value="">All categories</option>
+        <option value="work">Work</option><option value="personal">Personal</option><option value="shopping">Shopping</option>
+      </select>
+      <button class="btn light" @click="store.clearCompleted">Clear Done</button>
+      <button class="btn" @click="store.exportTasks">Export</button>
     </div>
- 
-    <!-- Edit Task Modal -->
-    <div v-if="editingTask" class="modal">
+
+    <!-- Kanban -->
+    <section class="board">
+      <div class="col">
+        <div class="col-h">To Do</div>
+        <draggable v-model="todoIds" group="tasks" item-key="id" class="list" @change="onChange">
+          <template #item="{ element }">
+            <TaskCard :task="filterTask(store.getTask(element))" @edit="openEdit" @delete="store.removeTask(element)" />
+          </template>
+          <template #footer>
+            <div v-if="todoEmpty" class="empty">No tasks</div>
+          </template>
+        </draggable>
+      </div>
+
+      <div class="col">
+        <div class="col-h">Doing</div>
+        <draggable v-model="doingIds" group="tasks" item-key="id" class="list" @change="onChange">
+          <template #item="{ element }">
+            <TaskCard :task="filterTask(store.getTask(element))" @edit="openEdit" @delete="store.removeTask(element)" />
+          </template>
+          <template #footer>
+            <div v-if="doingEmpty" class="empty">No tasks</div>
+          </template>
+        </draggable>
+      </div>
+
+      <div class="col">
+        <div class="col-h">Done</div>
+        <draggable v-model="doneIds" group="tasks" item-key="id" class="list" @change="onChange">
+          <template #item="{ element }">
+            <TaskCard :task="filterTask(store.getTask(element))" @edit="openEdit" @delete="store.removeTask(element)" />
+          </template>
+          <template #footer>
+            <div v-if="doneEmpty" class="empty">No tasks</div>
+          </template>
+        </draggable>
+      </div>
+    </section>
+
+    <!-- Edit Modal -->
+    <div v-if="editing" class="modal">
       <div class="modal-content">
-        <h2>Edit Task</h2>
-        <input v-model="editedTaskText" placeholder="Edit task" />
-        <input type="date" v-model="editedTaskDueDate" placeholder="Due Date" />
-        <select v-model="editedTaskCategory">
-          <option value="work">Work</option>
-          <option value="personal">Personal</option>
-          <option value="shopping">Shopping</option>
-        </select>
-        <select v-model="editedTaskPriority">
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-        <textarea v-model="editedTaskNotes" placeholder="Notes"></textarea>
-        <button @click="saveEditedTask">Save</button>
-        <button @click="cancelEdit">Cancel</button>
+        <h3>Edit Task</h3>
+        <input v-model="edit.title" class="control" placeholder="Title" />
+        <textarea v-model="edit.description" class="control" rows="3" placeholder="Description"></textarea>
+        <div class="grid2">
+          <input v-model="edit.dueDate" type="date" class="control" />
+          <select v-model="edit.priority" class="control">
+            <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <select v-model="edit.category" class="control">
+            <option value="work">Work</option><option value="personal">Personal</option><option value="shopping">Shopping</option>
+          </select>
+          <select v-model="edit.status" class="control">
+            <option value="todo">To Do</option><option value="doing">Doing</option><option value="done">Done</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button class="btn light" @click="editing=false">Cancel</button>
+          <button class="btn" @click="saveEdit">Save</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      newTask: '', // Holds the new task input
-      newTaskDueDate: '', // Holds the due date for the new task
-      newTaskCategory: 'work', // Holds the category for the new task
-      newTaskPriority: 'low', // Holds the priority for the new task
-      tasks: [], // Holds the list of tasks
-      filter: 'all', // Current filter
-      searchQuery: '', // Search query
-      editingTask: null, // Task being edited
-      editedTaskText: '', // Text for the task being edited
-      editedTaskDueDate: '', // Due date for the task being edited
-      editedTaskCategory: 'work', // Category for the task being edited
-      editedTaskPriority: 'low', // Priority for the task being edited
-      editedTaskNotes: '', // Notes for the task being edited
-      dragStartIndex: null, // Index of the task being dragged
-      isDarkMode: false, // Dark mode toggle
-      showArchived: false, // Show archived tasks
-    };
-  },
-  computed: {
-    // Filter tasks based on the selected filter and search query
-    filteredTasks() {
-      let tasks = this.tasks.filter((task) => !task.archived);
-      if (this.filter === 'completed') {
-        tasks = tasks.filter((task) => task.completed);
-      } else if (this.filter === 'incomplete') {
-        tasks = tasks.filter((task) => !task.completed);
-      }
-      if (this.searchQuery) {
-        tasks = tasks.filter((task) =>
-          task.text.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-      }
-      return tasks;
-    },
-    // Archived tasks
-    archivedTasks() {
-      return this.tasks.filter((task) => task.archived);
-    },
-    // Count remaining tasks
-    remainingTasks() {
-      return this.tasks.filter((task) => !task.completed && !task.archived).length;
-    },
-  },
-  methods: {
-    // Add a new task
-    addTask() {
-      if (this.newTask.trim() === '') return; // Prevent empty tasks
-      this.tasks.push({
-        id: Date.now(), // Unique ID for each task
-        text: this.newTask,
-        dueDate: this.newTaskDueDate,
-        category: this.newTaskCategory,
-        priority: this.newTaskPriority,
-        notes: '',
-        completed: false,
-        archived: false,
-      });
-      this.newTask = ''; // Clear the input
-      this.newTaskDueDate = ''; // Clear the due date
-      this.newTaskCategory = 'work'; // Reset category
-      this.newTaskPriority = 'low'; // Reset priority
-      this.saveTasks();
-    },
-    // Toggle task completion
-    toggleComplete(taskId) {
-      const task = this.tasks.find((task) => task.id === taskId);
-      if (task) {
-        task.completed = !task.completed;
-        this.saveTasks();
-      }
-    },
-    // Archive a task
-    archiveTask(taskId) {
-      const task = this.tasks.find((task) => task.id === taskId);
-      if (task) {
-        task.archived = !task.archived;
-        this.saveTasks();
-      }
-    },
-    // Unarchive a task
-    unarchiveTask(taskId) {
-      const task = this.tasks.find((task) => task.id === taskId);
-      if (task) {
-        task.archived = false;
-        this.saveTasks();
-      }
-    },
-    // Remove a task
-    removeTask(taskId) {
-      this.tasks = this.tasks.filter((task) => task.id !== taskId);
-      this.saveTasks();
-    },
-    // Edit a task
-    editTask(taskId) {
-      const task = this.tasks.find((task) => task.id === taskId);
-      if (task) {
-        this.editingTask = taskId;
-        this.editedTaskText = task.text;
-        this.editedTaskDueDate = task.dueDate;
-        this.editedTaskCategory = task.category;
-        this.editedTaskPriority = task.priority;
-        this.editedTaskNotes = task.notes;
-      }
-    },
-    // Save the edited task
-    saveEditedTask() {
-      const task = this.tasks.find((task) => task.id === this.editingTask);
-      if (task) {
-        task.text = this.editedTaskText;
-        task.dueDate = this.editedTaskDueDate;
-        task.category = this.editedTaskCategory;
-        task.priority = this.editedTaskPriority;
-        task.notes = this.editedTaskNotes;
-        this.saveTasks();
-      }
-      this.cancelEdit();
-    },
-    // Cancel editing
-    cancelEdit() {
-      this.editingTask = null;
-      this.editedTaskText = '';
-      this.editedTaskDueDate = '';
-      this.editedTaskCategory = 'work';
-      this.editedTaskPriority = 'low';
-      this.editedTaskNotes = '';
-    },
-    // Set the filter
-    setFilter(filter) {
-      this.filter = filter;
-    },
-    // Clear completed tasks
-    clearCompleted() {
-      this.tasks = this.tasks.filter((task) => !task.completed);
-      this.saveTasks();
-    },
-    // Drag and drop functionality
-    dragStart(index) {
-      this.dragStartIndex = index;
-    },
-    drop(dropIndex) {
-      const task = this.tasks.splice(this.dragStartIndex, 1)[0];
-      this.tasks.splice(dropIndex, 0, task);
-      this.saveTasks();
-    },
-    // Format date for display
-    formatDate(date) {
-      return new Date(date).toLocaleDateString();
-    },
-    // Toggle dark mode
-    toggleDarkMode() {
-      this.isDarkMode = !this.isDarkMode;
-    },
-    // Export tasks as JSON
-    exportTasks() {
-      const data = JSON.stringify(this.tasks);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'tasks.json';
-      link.click();
-      URL.revokeObjectURL(url);
-    },
-    // Import tasks from JSON
-    importTasks(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.tasks = JSON.parse(e.target.result);
-          this.saveTasks();
-        };
-        reader.readAsText(file);
-      }
-    },
-    // Save tasks to localStorage
-    saveTasks() {
-      localStorage.setItem('tasks', JSON.stringify(this.tasks));
-    },
-    // Load tasks from localStorage
-    loadTasks() {
-      const savedTasks = localStorage.getItem('tasks');
-      if (savedTasks) {
-        this.tasks = JSON.parse(savedTasks);
-      }
-    },
-  },
-  mounted() {
-    this.loadTasks(); // Load tasks when the app is mounted
-  },
-};
+<script setup>
+import { computed, onMounted, reactive, ref } from 'vue';
+import draggable from 'vuedraggable';
+import { useTasksStore } from '@/stores/useTasks';
+import AddTaskForm from '@/components/AddTaskForm.vue';
+import TaskCard from '@/components/TaskCard.vue';
+
+
+const store = useTasksStore();
+onMounted(() => store.load());
+
+// Filtra UI
+const search = ref('');
+const byPriority = ref('');
+const byCategory = ref('');
+
+// v-model për id-të e kolonave; setter bën persistim
+const todoIds  = computed({
+  get: () => store.columns.todo.filter(id => !!filterTask(store.getTask(id))),
+  set: (val) => store.reorderColumn('todo', val)
+});
+const doingIds = computed({
+  get: () => store.columns.doing.filter(id => !!filterTask(store.getTask(id))),
+  set: (val) => store.reorderColumn('doing', val)
+});
+const doneIds  = computed({
+  get: () => store.columns.done.filter(id => !!filterTask(store.getTask(id))),
+  set: (val) => store.reorderColumn('done', val)
+});
+
+const todoEmpty = computed(() => todoIds.value.length === 0);
+const doingEmpty = computed(() => doingIds.value.length === 0);
+const doneEmpty = computed(() => doneIds.value.length === 0);
+
+// Drag lëvizje midis kolonave
+function onChange(evt) {
+  const { from, to, item, newIndex } = evt;
+  const id = item?.__draggable_context?.element;
+  if (!id) return;
+  const fromStatus = colName(from);
+  const toStatus   = colName(to);
+  if (fromStatus && toStatus && fromStatus !== toStatus) {
+    store.moveBetween(fromStatus, toStatus, id, newIndex);
+  }
+}
+function colName(el) {
+  if (!el) return '';
+  const parentCol = el.closest('.col');
+  if (parentCol?.querySelector('.col-h')?.textContent.includes('To Do')) return 'todo';
+  if (parentCol?.querySelector('.col-h')?.textContent.includes('Doing')) return 'doing';
+  if (parentCol?.querySelector('.col-h')?.textContent.includes('Done'))  return 'done';
+  return '';
+}
+
+// Filtrim në UI (search/priority/category)
+function filterTask(task) {
+  if (!task) return null;
+  if (byPriority.value && task.priority !== byPriority.value) return null;
+  if (byCategory.value && task.category !== byCategory.value) return null;
+  if (search.value && !task.title.toLowerCase().includes(search.value.toLowerCase())
+      && !task.description?.toLowerCase().includes(search.value.toLowerCase())) return null;
+  return task;
+}
+
+// Modal Edit
+const editing = ref(false);
+const edit = reactive({
+  id: '', title: '', description: '', dueDate: '', priority: 'medium',
+  category: 'work', status: 'todo'
+});
+function openEdit(id) {
+  const t = store.getTask(id);
+  if (!t) return;
+  Object.assign(edit, { id: t.id, title: t.title, description: t.description || '',
+    dueDate: t.dueDate || '', priority: t.priority || 'medium', category: t.category || 'work',
+    status: t.status || 'todo' });
+  editing.value = true;
+}
+function saveEdit() {
+  store.updateTask(edit.id, {
+    title: edit.title, description: edit.description, dueDate: edit.dueDate,
+    priority: edit.priority, category: edit.category
+  });
+  // nëse ndryshon kolona/statusi, lëviz id-në
+  const currentStatus = ['todo','doing','done'].find(s => store.columns[s].includes(edit.id));
+  if (currentStatus && currentStatus !== edit.status) {
+    store.moveBetween(currentStatus, edit.status, edit.id, 0);
+  }
+  editing.value = false;
+}
 </script>
 
- <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #040430;
-  color: #374151;
-  margin: 0;
-  padding: 0;
-}
-
-/* App Container */
+body { background-color: #040430; margin:0; }
 #app {
-  max-width: 700px;
-  margin: 50px auto;
-  padding: 40px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+  font-family: 'Inter', sans-serif;
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 0 16px 40px;
+  color:#111827;
 }
+.hdr { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom: 10px; }
+.hdr h1 { color:#fff; margin:0; font-size: 28px; font-weight: 900; letter-spacing:.2px; }
+.hdr .sub { color:#cbd5e1; margin:.2rem 0 0; }
+.stats { display:flex; gap:.75rem; color:#cbd5e1; }
 
-/* Header */
-h1 {
-  text-align: center;
-  font-weight: 600;
-  color: black;
-  margin-bottom: 35px;
+.toolbar { display:flex; flex-wrap:wrap; gap:.5rem; margin: 12px 0 18px; }
+.control {
+  background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:.55rem .7rem; min-width: 180px;
 }
+.btn { background:#111827; color:#fff; border:0; padding:.55rem .9rem; border-radius:10px; font-weight:700; cursor:pointer; }
+.btn.light { background:#E5E7EB; color:#111827; }
 
-/* Add Task */
-.add-task {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr auto;
-  gap: 10px;
-  margin-bottom: 20px;
-}
+.board { display:grid; gap: 12px; grid-template-columns: repeat(3, 1fr); }
+.col { background: #F8FAFC; border:1px solid #E5E7EB; border-radius:16px; padding: 10px; display:flex; flex-direction:column; gap:10px; }
+.col-h { font-weight:800; color:#111827; padding:.2rem .4rem .4rem .4rem; }
+.list { display:flex; flex-direction:column; gap:8px; min-height: 60px; }
+.empty { color:#94A3B8; font-size:.9rem; text-align:center; padding: 8px; border:1px dashed #CBD5E1; border-radius:10px; }
 
-.add-task input,
-.add-task select {
-  padding: 12px;
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  background: #F9FAFB;
-}
+.list :deep(.sortable-ghost){ opacity:.6; }
+.list :deep(.sortable-drag){ transform: rotate(1deg); }
 
-.add-task input:focus,
-.add-task select:focus {
-  outline: none;
-  border-color: #3B82F6;
-  background: white;
-}
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:16px; }
+.modal-content { background:#fff; border-radius:14px; padding:18px; width:min(520px, 100%); display:grid; gap:.6rem; }
+.grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:.5rem; }
+.actions { display:flex; justify-content:flex-end; gap:.5rem; }
 
-.add-task button {
-  background-color: #3B82F6;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-weight: 500;
-}
-
-.add-task button:hover {
-  background-color: #2563EB;
-}
-
-/* Search Bar */
-.search-bar {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  background: #F9FAFB;
-  margin-bottom: 20px;
-}
-
-/* Task Controls */
-.task-controls {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.task-controls button {
-  background: #E5E7EB;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-weight: 500;
-}
-
-.task-controls button:hover {
-  background: #D1D5DB;
-}
-
-/* Filters */
-.filters {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.filters button {
-  background: #E5E7EB;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-weight: 500;
-}
-
-.filters button.active {
-  background: #3B82F6;
-  color: white;
-}
-
-.filters button:hover {
-  background: #D1D5DB;
-}
-
-/* Task List */
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: white;
-  border: 1px solid #E5E7EB;
-  border-radius: 10px;
-  padding: 15px 20px;
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-li:hover {
-  transform: scale(1.01);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-li.completed {
-  opacity: 0.6;
-  text-decoration: line-through;
-}
-
-li.low { border-left: 5px solid #10B981; }
-li.medium { border-left: 5px solid #F59E0B; }
-li.high { border-left: 5px solid #EF4444; }
-
-li button {
-  background: none;
-  border: none;
-  color: #3B82F6;
-  cursor: pointer;
-  margin-left: 8px;
-  font-size: 14px;
-  transition: color 0.2s ease;
-}
-
-li button:hover {
-  color: #2563EB;
-}
-
-/* Import/Export */
-.import-export {
-  margin-top: 30px;
-}
-
-.import-export button {
-  background-color: #3B82F6;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-weight: 500;
-}
-
-.import-export button:hover {
-  background-color: #2563EB;
-}
-
-.import-export input[type='file'] {
-  margin-left: 10px;
-}
-
-/* Modal */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 100%;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-}
-
-.modal-content input,
-.modal-content select,
-.modal-content textarea {
-  width: 100%;
-  margin-bottom: 14px;
-  padding: 12px;
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-}
-
-.modal-content button {
-  background-color: #10B981;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-weight: 500;
-}
-
-.modal-content button:hover {
-  background-color: #059669;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .add-task {
-    grid-template-columns: 1fr;
-  }
-  .task-controls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-}
-
+@media (max-width: 900px){ .board { grid-template-columns: 1fr; } }
 </style>
