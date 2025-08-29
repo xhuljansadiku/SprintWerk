@@ -2,7 +2,8 @@
 
 Kanban board with drag & drop, offline storage (IndexedDB), and a clean Pinia store.
 
-**Live:** https://sprintwerk.netlify.app/ • **Repo:** https://github.com/xhuljansadiku/SprintWerk
+•  **Live:** https://sprintwerk.netlify.app/ 
+• **Repo:** https://github.com/xhuljansadiku/SprintWerk
 
 ---
 

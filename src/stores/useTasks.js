@@ -38,12 +38,12 @@ export const useTasksStore = defineStore('tasks', {
             done: [...(parsed.columns?.done || [])]
           };
         } catch {
-          // në rast korruptimi, reset
+         // in case of corruption, reset
           this.tasks = [];
           this.columns = { todo: [], doing: [], done: [] };
         }
       } else if (data && typeof data === 'object') {
-        // për kompatibilitet nëse ke ruajtur si objekt më herët
+  // for compatibility if you saved as an object earlier
         this.tasks = (data.tasks || []).map(t => ({ ...t }));
         this.columns = {
           todo: [...(data.columns?.todo || [])],
@@ -51,7 +51,7 @@ export const useTasksStore = defineStore('tasks', {
           done: [...(data.columns?.done || [])]
         };
       } else {
-        // Migrim nga localStorage "tasks" (formati yt i vjetër)
+   // Migrate from localStorage "tasks" (your old format)
         const legacy = localStorage.getItem('tasks');
         if (legacy) {
           const old = JSON.parse(legacy);
@@ -73,11 +73,11 @@ export const useTasksStore = defineStore('tasks', {
             doing: migrated.filter(t => t.status === 'doing').map(t => t.id),
             done: migrated.filter(t => t.status === 'done').map(t => t.id)
           };
-          await this.save(); // ruaje menjëherë në formatin e ri
+          await this.save(); // save immediately in the new format
         }
       }
 
-      // Autosave me debounce (s’ruan për çdo ndryshim mikroskopik)
+   // Autosave with debounce (doesn't save for every microscopic change)
       let t;
       this.$subscribe(() => {
         clearTimeout(t);
@@ -86,7 +86,7 @@ export const useTasksStore = defineStore('tasks', {
     },
 
     async save() {
-      // Hiq proxy-t reaktivë dhe krijo payload të pastër
+  // Remove reactive proxies and create clean payload
       const plainTasks = toRaw(this.tasks).map(t => ({ ...t }));
       const plainColumns = {
         todo: [...toRaw(this.columns.todo)],
@@ -96,7 +96,7 @@ export const useTasksStore = defineStore('tasks', {
 
       const payload = { tasks: plainTasks, columns: plainColumns };
 
-      // ✅ ruaje si STRING — shmang DataCloneError
+// ✅ save as STRING — avoid DataCloneError
       await localforage.setItem(STORAGE_KEY, JSON.stringify(payload));
     },
 
