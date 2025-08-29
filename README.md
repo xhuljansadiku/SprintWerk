@@ -2,7 +2,7 @@
 
 Kanban board with drag & drop, offline storage (IndexedDB), and a clean Pinia store.
 
-**Live:** _add Netlify/Vercel URL_ • **Repo:** _add GitHub URL_
+**Live:** [_add Netlify/Vercel URL_](https://sprintwerk.netlify.app/) • **Repo:** _add GitHub URL_
 
 ---
 
