@@ -192,9 +192,9 @@ function saveEdit() {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-/* ===== THEME: Clean Slate (me spacing & dark-mode opsionale) ===== */
+/* ===== THEME===== */
 :root{
-  /* Ngjyra */
+  /* Colors */
   --bg:#f6f8fc;
   --ink:#0f172a;
   --muted:#64748b;
@@ -206,7 +206,7 @@ function saveEdit() {
   --surface-2:#fbfdff;
   --border:#e6eaf2;
 
-  /* Hije */
+  /* Shadow */
   --shadow-sm: 0 8px 20px rgba(15,23,42,.06);
   --shadow-lg: 0 22px 60px rgba(15,23,42,.12);
 
@@ -222,11 +222,11 @@ function saveEdit() {
   --radius-l: 18px;
   --radius-xl: 999px;
 
-  /* Gjerësi container */
+  /*   container */
   --container-max: 1100px;
 }
 
-/* Dark mode (opsionale, ndez automatikisht) */
+/* Dark mode   */
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#0b1220;
@@ -256,7 +256,7 @@ body{
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Container me padding fluid + safe-area */
+/* Container with padding fluid + safe-area */
 #app{
   max-width: var(--container-max);
   margin-inline: auto;
@@ -324,14 +324,13 @@ body{
 .btn.light:hover{ box-shadow: 0 14px 34px rgba(15,23,42,.10); }
 
 /* ===== BOARD ===== */
-/* Grid që vetë-përshtatet nga mobile në desktop */
 .board{
   display:grid; gap: clamp(12px, 1.6vw, 16px);
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items:start;
 }
 
-/* Kolonat si “liste” të buta me padding */
+
 .col{
   background: var(--surface-2);
   border:1px solid var(--border);
@@ -413,7 +412,6 @@ body{
 
 /* ===== RESPONSIVE TWEAKS ===== */
 @media (max-width: 980px){
-  /* Grid tashmë auto-fit; por shtojmë breathing room */
   #app{ padding-inline: clamp(14px, 4vw, 22px); }
   .hdr{ align-items:flex-start; }
 }
@@ -425,7 +423,7 @@ body{
   .grid2{ grid-template-columns:1fr; }
 }
 
-/* Reducim animacionesh për përdoruesit që e kërkojnë */
+
 @media (prefers-reduced-motion: reduce){
   *{ transition:none !important; animation:none !important; }
 }
